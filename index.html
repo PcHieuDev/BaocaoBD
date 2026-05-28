@@ -1,28 +1,3 @@
-<?php
-$data = [
-  ['thang' => 1, 'di_sl' => 167382, 'di_kl' => 170249503, 'den_sl' => 263082, 'den_kl' => 197185017],
-  ['thang' => 2, 'di_sl' => 95480, 'di_kl' => 81843195, 'den_sl' => 208463, 'den_kl' => 116483363],
-  ['thang' => 3, 'di_sl' => 151387, 'di_kl' => 129665665, 'den_sl' => 223330, 'den_kl' => 159011931],
-  ['thang' => 4, 'di_sl' => 148729, 'di_kl' => 117079989, 'den_sl' => 229993, 'den_kl' => 140780620],
-];
-$tong = [
-  'di_sl' => array_sum(array_column($data, 'di_sl')),
-  'di_kl' => array_sum(array_column($data, 'di_kl')),
-  'den_sl' => array_sum(array_column($data, 'den_sl')),
-  'den_kl' => array_sum(array_column($data, 'den_kl')),
-];
-function fmt($n, $dec = 0)
-{
-  return number_format($n, $dec, ',', '.');
-}
-
-$labels = json_encode(array_map(function ($r) {
-  return "Tháng {$r['thang']}"; }, $data));
-$di_sl = json_encode(array_column($data, 'di_sl'));
-$di_kl = json_encode(array_column($data, 'di_kl'));
-$den_sl = json_encode(array_column($data, 'den_sl'));
-$den_kl = json_encode(array_column($data, 'den_kl'));
-?>
 <!DOCTYPE html>
 <html lang="vi">
 
@@ -458,22 +433,22 @@ $den_kl = json_encode(array_column($data, 'den_kl'));
     <div class="kpi-grid">
       <div class="kpi-card c1">
         <div class="lbl"><span class="dot" style="background:var(--a1)"></span>Tổng SL Chiều đi</div>
-        <div class="val"><?= fmt($tong['di_sl']) ?></div>
+        <div class="val" id="kpi-di-sl"></div>
         <div class="sub">bưu gửi</div>
       </div>
       <div class="kpi-card c2">
         <div class="lbl"><span class="dot" style="background:var(--a2)"></span>Tổng KL Chiều đi</div>
-        <div class="val" id="kpi-di-kl"><?= fmt($tong['di_kl']) ?></div>
+        <div class="val" id="kpi-di-kl"></div>
         <div class="sub" id="kpi-di-kl-unit">gram</div>
       </div>
       <div class="kpi-card c3">
         <div class="lbl"><span class="dot" style="background:var(--a3)"></span>Tổng SL Chiều đến</div>
-        <div class="val"><?= fmt($tong['den_sl']) ?></div>
+        <div class="val" id="kpi-den-sl"></div>
         <div class="sub">bưu gửi</div>
       </div>
       <div class="kpi-card c4">
         <div class="lbl"><span class="dot" style="background:var(--a4)"></span>Tổng KL Chiều đến</div>
-        <div class="val" id="kpi-den-kl"><?= fmt($tong['den_kl']) ?></div>
+        <div class="val" id="kpi-den-kl"></div>
         <div class="sub" id="kpi-den-kl-unit">gram</div>
       </div>
     </div>
@@ -502,23 +477,15 @@ $den_kl = json_encode(array_column($data, 'den_kl'));
             </tr>
           </thead>
           <tbody id="tbl-body">
-            <?php foreach ($data as $r): ?>
-              <tr>
-                <td><?= $r['thang'] ?></td>
-                <td><?= fmt($r['di_sl']) ?></td>
-                <td class="kl-di"><?= fmt($r['di_kl']) ?></td>
-                <td><?= fmt($r['den_sl']) ?></td>
-                <td class="kl-den"><?= fmt($r['den_kl']) ?></td>
-              </tr>
-            <?php endforeach; ?>
+            <!-- Data will be populated by JS -->
           </tbody>
           <tfoot>
             <tr>
               <td>Tổng</td>
-              <td><?= fmt($tong['di_sl']) ?></td>
-              <td id="foot-di-kl" class="kl-di"><?= fmt($tong['di_kl']) ?></td>
-              <td><?= fmt($tong['den_sl']) ?></td>
-              <td id="foot-den-kl" class="kl-den"><?= fmt($tong['den_kl']) ?></td>
+              <td id="foot-di-sl"></td>
+              <td id="foot-di-kl" class="kl-di"></td>
+              <td id="foot-den-sl"></td>
+              <td id="foot-den-kl" class="kl-den"></td>
             </tr>
           </tfoot>
         </table>
@@ -566,13 +533,50 @@ $den_kl = json_encode(array_column($data, 'den_kl'));
 
   <script>
     /* ── Raw data (gram) ── */
-    const labels = <?= $labels ?>;
-    const di_sl_raw = <?= $di_sl ?>;
-    const di_kl_raw = <?= $di_kl ?>;
-    const den_sl_raw = <?= $den_sl ?>;
-    const den_kl_raw = <?= $den_kl ?>;
-    const tong_di_kl = <?= $tong['di_kl'] ?>;
-    const tong_den_kl = <?= $tong['den_kl'] ?>;
+    const data = [
+      { thang: 1, di_sl: 167382, di_kl: 170249503, den_sl: 263082, den_kl: 197185017 },
+      { thang: 2, di_sl: 95480, di_kl: 81843195, den_sl: 208463, den_kl: 116483363 },
+      { thang: 3, di_sl: 151387, di_kl: 129665665, den_sl: 223330, den_kl: 159011931 },
+      { thang: 4, di_sl: 148729, di_kl: 117079989, den_sl: 229993, den_kl: 140780620 },
+    ];
+    
+    const labels = data.map(r => `Tháng ${r.thang}`);
+    const di_sl_raw = data.map(r => r.di_sl);
+    const di_kl_raw = data.map(r => r.di_kl);
+    const den_sl_raw = data.map(r => r.den_sl);
+    const den_kl_raw = data.map(r => r.den_kl);
+
+    const tong_di_sl = di_sl_raw.reduce((a, b) => a + b, 0);
+    const tong_di_kl = di_kl_raw.reduce((a, b) => a + b, 0);
+    const tong_den_sl = den_sl_raw.reduce((a, b) => a + b, 0);
+    const tong_den_kl = den_kl_raw.reduce((a, b) => a + b, 0);
+
+    function fmtNum(v) { return v.toLocaleString('vi-VN'); }
+
+    // populate KPIs
+    document.getElementById('kpi-di-sl').textContent = fmtNum(tong_di_sl);
+    document.getElementById('kpi-di-kl').textContent = fmtNum(tong_di_kl);
+    document.getElementById('kpi-den-sl').textContent = fmtNum(tong_den_sl);
+    document.getElementById('kpi-den-kl').textContent = fmtNum(tong_den_kl);
+
+    // populate table
+    const tbody = document.getElementById('tbl-body');
+    data.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.thang}</td>
+        <td>${fmtNum(r.di_sl)}</td>
+        <td class="kl-di">${fmtNum(r.di_kl)}</td>
+        <td>${fmtNum(r.den_sl)}</td>
+        <td class="kl-den">${fmtNum(r.den_kl)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('foot-di-sl').textContent = fmtNum(tong_di_sl);
+    document.getElementById('foot-di-kl').textContent = fmtNum(tong_di_kl);
+    document.getElementById('foot-den-sl').textContent = fmtNum(tong_den_sl);
+    document.getElementById('foot-den-kl').textContent = fmtNum(tong_den_kl);
 
     /* ── Unit config ── */
     const UNITS = {
@@ -590,7 +594,6 @@ $den_kl = json_encode(array_column($data, 'den_kl'));
       const u = UNITS[unit];
       return parseFloat((v / u.div).toFixed(u.dec)).toLocaleString('vi-VN');
     }
-    function fmtNum(v) { return v.toLocaleString('vi-VN'); }
 
     /* ── Colors ── */
     const C = {
